@@ -3,3 +3,11 @@
 .RData
 .Ruserdata
 *.Rproj
+
+el-paso.gdb/
+block-access.png
+blocks_access.csv
+demand-map.png
+network-map.png
+stops-access.png
+stops_access.csv

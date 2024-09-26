@@ -1,0 +1,346 @@
+---
+title: "Access to and by Transit"
+format: html
+editor: visual
+execute: 
+  warning: false
+  message: false
+---
+
+## Setup
+
+### Software installation
+
+1.  Download and install:
+
+    -   R (<https://cran.rstudio.com/>)
+
+    -   RStudio (<https://posit.co/download/rstudio-desktop/>)
+
+    -   Java Development Kit (JDK) 21 (<https://adoptium.net/>)
+
+2.  Install the following packages within R:
+
+    -   tidyverse
+
+    -   sf
+
+    -   r5r
+
+    -   here
+
+    -   knitr
+
+### Data
+
+1.  Create a project folder.
+
+2.  Create an RStudio project with that project folder.
+
+3.  Save this Quarto file to your RStudio project folder.
+
+4.  Navigate to <https://github.com/vibe-lab-gsd/GSD-SES-5511/tree/main/network-files> and choose a study area from among the directories you see listed there.
+
+5.  Open that directory and download all the files you find there.
+
+6.  Create a subfolder called "network-files" in your project folder. Save the files you just downloaded to that subfolder.
+
+7.  Navigate your browser to <https://github.com/vibe-lab-gsd/GSD-SES-5511/tree/main/locations>, download the geojson file corresponding to your study area, and save it to your project directory.
+
+## Load packages
+
+Run the following code to allocate 2 gigabytes of memory to Java and load the libraries you'll be using.
+
+```{r}
+options(java.parameters = '-Xmx2G')  
+
+library(tidyverse) 
+library(sf) 
+library(r5r) 
+library(here)
+library(knitr)
+```
+
+## Initialize R5
+
+Run this code to set up an R5 core you will use for subsequent calculations.
+
+```{r}
+my_core <- here("network-files",
+                "El-Paso-TX") |>
+  setup_r5()
+```
+
+## Map network
+
+Here's a quick map of the routes, stops, and streets within the study area.
+
+```{r}
+streets <- street_network_to_sf(my_core)$edges
+
+transit <- transit_network_to_sf(my_core)
+
+routes <- transit$routes
+stops <- transit$stops
+
+routes_bbox <- st_bbox(routes)
+streets_bbox <- st_bbox(streets)
+
+area <- st_intersection(st_as_sfc(routes_bbox), 
+                                st_as_sfc(streets_bbox))
+
+area_routes <- st_intersection(routes, area)
+area_stops <- st_intersection(stops, area) |>
+  rename(id = stop_id)
+area_streets <- st_intersection(streets, area) |>
+  st_cast("MULTILINESTRING")
+
+ggplot(area_streets) +
+  geom_sf(color = "gray") +
+  geom_sf(data = area_routes,
+          color = "red") +
+  geom_sf(data = area_stops,
+          color = "blue",
+          size = 1) +
+  theme_void()
+```
+
+## Save map
+
+The following code will save the above map as a png file.
+
+```{r}
+here("network-map.png") |>
+  ggsave(width = 6, height = 6, units = "in", dpi = 600)
+```
+
+## Map locations
+
+We can also read in the centroids (points in the middle) of census blocks within the study area, display them on a map.
+
+We'll be filtering them to only include blocks that contain a non-zero number of households and/or jobs.
+
+```{r}
+blocks <- here("locations",
+               "El-Paso-TX-blocks.geojson") |>
+  st_read(quiet = TRUE) |>
+  st_filter(area) |>
+  filter(total_emp > 0,
+         n_HHs > 0 )
+```
+
+This layer of blocks includes the following attributes:
+
+-   **total_emp:** the total number of jobs in each block.
+
+-   **retail_emp:** the total number of retail jobs in each block.
+
+-   **service_emp:** the total number of service jobs in each block.
+
+-   **basic_emp:** the total number of jobs that are not retail or service jobs in each block.
+
+-   **n_HHs:** The number of households living in each block.
+
+-   **hbw_attr:** The estimated demand for "home-based work" trips (trips between home and work) that would be to/from each block (estimated as 1.2 times the total number of jobs in the block, based on NCHRP 716[^1]).
+
+-   **hbo_attr:** The estimated demand for "home-based other" trips (trips other than home-based work trips that begin or end at home) that would be to/from this block (estimated as 0.7 times the number of households plus 0.7 times basic employment plus 8.4 times retail employment plus 3.5 times service employment, based on NCHRP 716).
+
+-   **nhb_attr:** The estimated demand for "non-home-based" trips (those that do not begin or end at home) that would be to/from this block (estimated as 0.6 times the number of households plus 0.5 times basic employment plus 4.7 times retail employment plus 1.4 times service employment, based on NCHRP 716).
+
+-   **total_attr:** The estimated total demand for trips to/from this block.
+
+[^1]: <https://nap.nationalacademies.org/catalog/14665/travel-demand-forecasting-parameters-and-techniques>
+
+Here's a map that shows the variation in demand for travel to/from locations throughout the study area (transit routes are also shown for context).
+
+```{r}
+ggplot(area_routes) +
+  geom_sf(color = "red") +
+  geom_sf(data = blocks,
+          aes(size = total_attr,
+              alpha = total_attr)) +
+  scale_alpha(name = "Estimate daily trips") +
+  scale_size(name = "Estimate daily trips") +
+  theme_void()
+```
+
+I'll save that map as a .png file.
+
+```{r}
+here("demand-map.png") |>
+  ggsave(width = 6, height = 6, units = "in", dpi = 600)
+```
+
+## Calculate accessibility to transit
+
+You can calculate accessibility using the `accessibility()` function in the r5r package. You will need to specifify the following parameters:
+
+-   `r5r_core`: The core you created in the "Initialize R5" section.
+
+-   `origins`: The locations for which you want to generate an accessibility score.
+
+-   `destinations`: The locations you want to calculate access to.
+
+-   `opportunities_colnames`: An attribute/variable of the destinations layer that indicates the weight of each destination (e.g. how many destinations are at each location).
+
+-   `decay_function`: A function that determines how to weight a destination based on how far it is from the origin. Can be "step", "logistic", "linear", or "exponential." See <https://urban-stack.shinyapps.io/access-decay/>
+
+-   `cutoff`: The first parameter defining the decay function (see <https://urban-stack.shinyapps.io/access-decay/>).
+
+-   `decay_value`: The second parameter defining the decay function (if there is a second), See <https://urban-stack.shinyapps.io/access-decay/>
+
+-   `mode`: The mode of transportation. Can be "WALK", "CAR", or "TRANSIT". If the mode is "TRANSIT", you should also specify the following parameters:
+
+    -   `departure_datetime`: What time and day you are calculating accessibility for.
+
+    -   `time_window`: Accessibility will be calculated at one-minute intervals during a window. If you want to median accessibility over a one-hour period, beginning at your specified time, set this to 60, for 60 minutes.
+
+    -   `percentiles`: By default, you will get the median accessibility for the period defined by the departure time and time window, but you can also get other points in the distribution.
+
+### Accessibility to transit
+
+Here is how you would calculate the number of households within a 10-minute walk of each transit stop in your study area.
+
+```{r}
+access_to_transit <- accessibility(r5r_core = my_core,
+                                   origins = area_stops,
+                                   destinations = blocks,
+                                   opportunities_colnames = "n_HHs",
+                                   mode = "WALK",
+                                   decay_function = "step",
+                                   cutoffs = 10)
+
+head(access_to_transit) |>
+  kable()
+```
+
+Now we can join those results to our stops layer and see the number of households served by each stop.
+
+```{r}
+area_stops <- area_stops |>
+  left_join(access_to_transit)
+
+ggplot(area_stops) +
+  geom_sf(aes(color = accessibility)) +
+  scale_color_viridis_c(trans = "log",
+                        name = "Number of\nhouseholds within\n10-minute walk",
+                        breaks = c(5, 50, 500)) +
+  theme_void()
+```
+
+And I can save that map.
+
+```{r}
+here("stops-access.png") |>
+  ggsave(width = 6, height = 6, units = "in", dpi = 600)
+```
+
+### Accessibility by transit
+
+Here is how you would calculate the median, 25th percentile, and 75th percentile number of trip attractions that are accessible from each census block with a 30-minute transit commute during the 5pm hour on Wednesday, February 28, 2024.
+
+You'll end up with a table with the 25th, 50th, and 75th percentile accessibility for each census block.
+
+```{r}
+access_by_transit <- accessibility(r5r_core = my_core,
+                                   origins = blocks,
+                                   destinations = blocks,
+                                   opportunities_colnames = "total_attr",
+                                   mode = "TRANSIT",
+                                   decay_function = "step",
+                                   cutoffs = 30,
+                                   departure_datetime = 
+                                   as.POSIXct("28-02-2024 17:00:00",
+                                              format = "%d-%m-%Y %H:%M:%S"),
+                                   time_window = 60,
+                                   percentiles = c(25, 50, 75))
+
+head(access_by_transit) |>
+  kable()
+```
+
+It will be helpful to rearrange this table so that there is one row for each census block and the different accessibility value for each percentile is in a different column.
+
+```{r}
+access_by_transit <- access_by_transit |>
+  select(id, percentile, accessibility) |>
+  pivot_wider(id_cols = "id",
+              names_from = percentile,
+              names_prefix = "access_pctile_",
+              values_from = accessibility)
+
+head(access_by_transit) |>
+  kable()
+```
+
+Now we can join this to our layer of census block centroids and see how access by transit varies across the study area.
+
+```{r}
+blocks <- blocks |>
+  left_join(access_by_transit)
+
+ggplot(blocks) +
+  geom_sf(aes(color = access_pctile_50),
+          size = 1) +
+  scale_color_viridis_c(trans = "log",
+                        name = "Median accessibilty\nto destinations",
+                        breaks = c(20, 200, 2000, 20000)) +
+  theme_void()
+```
+
+And I can save that map.
+
+```{r}
+here("block-access.png") |>
+  ggsave(width = 6, height = 6, units = "in", dpi = 600)
+```
+
+## Stop R5
+
+Once you're done with your calculations, you can stop R5, which will release the memory it's using.
+
+```{r}
+stop_r5()
+```
+
+## Save data
+
+You might want to work with this data using other GIS software. Here is how you would save all this data to an ESRI geodatabase.
+
+```{r}
+st_write(area_stops, 
+         dsn = here("el-paso.gdb"),
+         layer = "stops",
+         quiet = TRUE,
+         append = FALSE)
+
+st_write(area_routes, 
+         dsn = here("el-paso.gdb"),
+         layer = "routes",
+         quiet = TRUE,
+         append = FALSE)
+
+st_write(area_streets, 
+         dsn = here("el-paso.gdb"),
+         layer = "streets",
+         quiet = TRUE,
+         append = FALSE)
+
+st_write(blocks, 
+         dsn = here("el-paso.gdb"),
+         layer = "blocks",
+         quiet = TRUE,
+         append = FALSE)
+```
+
+And here is how I would save the data in the blocks and stops files as csv files (without the geospatial data).
+
+```{r}
+area_stops |>
+  st_drop_geometry() |>
+  write_csv(file = here("stops_access.csv"))
+
+blocks |>
+  st_drop_geometry() |>
+  write_csv(file = here("blocks_access.csv"))
+```
