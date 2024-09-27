@@ -31,6 +31,8 @@ execute:
 
     -   knitr
 
+    -   tidytransit
+
 ### Data
 
 1.  Create a project folder.
@@ -59,6 +61,7 @@ library(sf)
 library(r5r) 
 library(here)
 library(knitr)
+library(tidytransit)
 ```
 
 ## Initialize R5
@@ -112,6 +115,47 @@ The following code will save the above map as a png file.
 ```{r}
 here("network-map.png") |>
   ggsave(width = 6, height = 6, units = "in", dpi = 600)
+```
+
+## Map stop frequencies
+
+As we've discussed, the presence of a stop is less relevant than the presence of frequent transit service. We can map the stops by how frequently they are served.
+
+```{r}
+network_file_list <- list.files(path = here("network-files",
+                                           "El-Paso-TX"),
+                               full.names = FALSE)
+
+gtfs_files <- network_file_list[str_detect(network_file_list, ".zip")]
+
+gtfs_data_1 <- read_gtfs(here("network-files",
+                                       "El-Paso-TX",
+                                       gtfs_files[1]))
+
+stop_freq <- get_stop_frequency(gtfs_data_1, 
+                                start_time = "17:00:00",
+                                end_time = "18:00:00") |>
+  mutate(id = paste0("google_transit:", stop_id)) |>
+  select(id, n_departures) |>
+  group_by(id) |>
+  summarize(n_departures = sum(n_departures)) 
+
+area_stops <- left_join(area_stops, stop_freq) |>
+  replace_na(list(n_departures = 0)) |>
+  mutate(freq_cat = case_when(n_departures == 1 ~ "60-minute headways",
+                              n_departures == 2 ~ "30-minute headways",
+                              n_departures == 3 ~ "20-minute headways",
+                              n_departures == 4 ~ "15-minute headways",
+                              n_departures > 4 ~ "Less than 15-minute headways",
+                              TRUE ~ "No service from 5pm to 6pm"))
+
+ggplot(area_stops) +
+  geom_sf(data = area_stops,
+          size = 1,
+          aes(color = freq_cat)) +
+  scale_color_brewer(name = "Service frequency",
+                     type = "qual") +
+  theme_void()
 ```
 
 ## Map locations
@@ -202,7 +246,7 @@ You can calculate accessibility using the `accessibility()` function in the r5r 
 Here is how you would calculate the number of households within a 10-minute walk of each transit stop in your study area.
 
 ```{r}
-access_to_transit <- accessibility(r5r_core = my_core,
+access_to_transit_1 <- accessibility(r5r_core = my_core,
                                    origins = area_stops,
                                    destinations = blocks,
                                    opportunities_colnames = "n_HHs",
@@ -210,7 +254,7 @@ access_to_transit <- accessibility(r5r_core = my_core,
                                    decay_function = "step",
                                    cutoffs = 10)
 
-head(access_to_transit) |>
+head(access_to_transit_1) |>
   kable()
 ```
 
@@ -218,7 +262,7 @@ Now we can join those results to our stops layer and see the number of household
 
 ```{r}
 area_stops <- area_stops |>
-  left_join(access_to_transit)
+  left_join(access_to_transit_1)
 
 ggplot(area_stops) +
   geom_sf(aes(color = accessibility)) +
@@ -233,6 +277,35 @@ And I can save that map.
 ```{r}
 here("stops-access.png") |>
   ggsave(width = 6, height = 6, units = "in", dpi = 600)
+```
+
+Another measure of accessibility to transit would be the number of transit departures within a ten-minute walk from each census block.
+
+```{r}
+access_to_transit_2 <- accessibility(r5r_core = my_core,
+                                   origins = blocks,
+                                   destinations = area_stops,
+                                   opportunities_colnames = "n_departures",
+                                   mode = "WALK",
+                                   decay_function = "step",
+                                   cutoffs = 10)
+
+head(access_to_transit_2) |>
+  kable()
+```
+
+And now I can map those:
+
+```{r}
+blocks <- blocks |>
+  left_join(access_to_transit_2)
+
+ggplot(blocks) +
+  geom_sf(aes(color = accessibility)) +
+  scale_color_viridis_c(trans = "log",
+                        name = "Number of\nbus departures\n10-minute walk",
+                        breaks = c(1, 10, 100)) +
+  theme_void()
 ```
 
 ### Accessibility by transit
