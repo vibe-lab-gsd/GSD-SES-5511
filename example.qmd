@@ -76,7 +76,7 @@ my_core <- here("network-files",
 
 ## Map network
 
-Here's a quick map of the routes, stops, and streets within the study area.
+We can make a quick map of the study area. We'll start by creating a layer of streets, a layer of transit routes, and a layer of transit stops from the network data.
 
 ```{r}
 streets <- street_network_to_sf(my_core)$edges
@@ -85,19 +85,34 @@ transit <- transit_network_to_sf(my_core)
 
 routes <- transit$routes
 stops <- transit$stops
+```
 
+The transit network might cover a larger area than the street network, and the street network might include some areas that aren't served by transit at all, so we'll define a bounding box around the transit network and a bounding box around the street network and define our study area as the area that those two boxes overlap.
+
+```{r}
 routes_bbox <- st_bbox(routes)
 streets_bbox <- st_bbox(streets)
 
 area <- st_intersection(st_as_sfc(routes_bbox), 
                                 st_as_sfc(streets_bbox))
 
+```
+
+Now, we'll filter out routes, stops, and streets to only include what's in that study area.
+
+```{r}
 area_routes <- st_intersection(routes, area)
+
 area_stops <- st_intersection(stops, area) |>
   rename(id = stop_id)
+
 area_streets <- st_intersection(streets, area) |>
   st_cast("MULTILINESTRING")
+```
 
+And we can create a quick map of the routes, stops, and streets in our study area.
+
+```{r}
 ggplot(area_streets) +
   geom_sf(color = "gray") +
   geom_sf(data = area_routes,
@@ -108,8 +123,6 @@ ggplot(area_streets) +
   theme_void()
 ```
 
-## Save map
-
 The following code will save the above map as a png file.
 
 ```{r}
@@ -119,7 +132,9 @@ here("network-map.png") |>
 
 ## Map stop frequencies
 
-As we've discussed, the presence of a stop is less relevant than the presence of frequent transit service. We can map the stops by how frequently they are served.
+As we've discussed, the presence of a stop is less relevant than the presence of frequent transit service. We can map the stops by how frequently they are served. The tidytransit package has a function called `get_stop_frequency` that will read the GTFS file and calculate the number of departures from each stop within a specified time window.
+
+First we need to find the GTFS file in the networks folder. Here, I'm getting a list of all the file in the directory, and making a separate list of those that are zip files (these will be the GTFS files).
 
 ```{r}
 network_file_list <- list.files(path = here("network-files",
@@ -128,6 +143,15 @@ network_file_list <- list.files(path = here("network-files",
 
 gtfs_files <- network_file_list[str_detect(network_file_list, ".zip")]
 
+```
+
+Now, I want to read the first GTFS feed in my list and calculate the stop frequencies. A couple quirks: tidytransit's `read_gtfs` function is leaving off a prefix in the id column that the r5r package leaves in when it reads in stop locations, so in this specific case of El Paso, I'm adding it back in. You may not need to do this specific thing (`mutate(id = paste0("google_transit:", stop_id))`) for your study area.
+
+Also, the `get_stop_frequency` function returns a separate frequency for each route, so you'll want to use `group_by` and `summarize` to collapse your data to the stop level.
+
+The `head()` and `kable()` functions below are just so I can show you the first few rows of the resulting table.
+
+```{r}
 gtfs_data_1 <- read_gtfs(here("network-files",
                                        "El-Paso-TX",
                                        gtfs_files[1]))
@@ -136,10 +160,18 @@ stop_freq <- get_stop_frequency(gtfs_data_1,
                                 start_time = "17:00:00",
                                 end_time = "18:00:00") |>
   mutate(id = paste0("google_transit:", stop_id)) |>
-  select(id, n_departures) |>
   group_by(id) |>
   summarize(n_departures = sum(n_departures)) 
 
+head(stop_freq) |>
+  kable()
+
+
+```
+
+Now we can add those frequencies to our layer of stops. Stops that have no service during the study period will have missing values, so I'll replace those NA values with zeros. I'll also calculate a categorical frequency variable just for visualization purposes.
+
+```{r}
 area_stops <- left_join(area_stops, stop_freq) |>
   replace_na(list(n_departures = 0)) |>
   mutate(freq_cat = case_when(n_departures == 1 ~ "60-minute headways",
@@ -149,6 +181,12 @@ area_stops <- left_join(area_stops, stop_freq) |>
                               n_departures > 4 ~ "Less than 15-minute headways",
                               TRUE ~ "No service from 5pm to 6pm"))
 
+
+```
+
+Now I can make a quick map showing how the frequency varies among stops.
+
+```{r}
 ggplot(area_stops) +
   geom_sf(data = area_stops,
           size = 1,
@@ -243,6 +281,8 @@ You can calculate accessibility using the `accessibility()` function in the r5r 
 
 ### Accessibility to transit
 
+#### Access to households from stops
+
 Here is how you would calculate the number of households within a 10-minute walk of each transit stop in your study area.
 
 ```{r}
@@ -279,6 +319,8 @@ here("stops-access.png") |>
   ggsave(width = 6, height = 6, units = "in", dpi = 600)
 ```
 
+#### Access to departures from blocks/households
+
 Another measure of accessibility to transit would be the number of transit departures within a ten-minute walk from each census block.
 
 ```{r}
@@ -303,7 +345,7 @@ blocks <- blocks |>
 ggplot(blocks) +
   geom_sf(aes(color = accessibility)) +
   scale_color_viridis_c(trans = "log",
-                        name = "Number of\nbus departures\n10-minute walk",
+                        name = "Number of bus \ndepartures within\na 10-minute walk",
                         breaks = c(1, 10, 100)) +
   theme_void()
 ```
