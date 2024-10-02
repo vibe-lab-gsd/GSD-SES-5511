@@ -150,20 +150,19 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>Run this code to set up an R5 core you will use for subsequent calculations.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>my_core <span class="ot">&lt;-</span> <span class="fu">here</span>(<span class="st">"network-files"</span>,</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>                <span class="st">"El-Paso-TX"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>                <span class="st">"Salem-OR"</span>) <span class="sc">|&gt;</span></span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">setup_r5</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="map-network" class="level2">
 <h2 class="anchored" data-anchor-id="map-network">Map network</h2>
-<p>We can make a quick map of the study area. We’ll start by creating a layer of streets, a layer of transit routes, and a layer of transit stops from the network data.</p>
+<p>We can make a quick map of the study area. We’ll start by creating a layer of streets and a layer of transit routes from the network data. We’ll use a different method to get a layer of transit stops in a minute.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>streets <span class="ot">&lt;-</span> <span class="fu">street_network_to_sf</span>(my_core)<span class="sc">$</span>edges</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>transit <span class="ot">&lt;-</span> <span class="fu">transit_network_to_sf</span>(my_core)</span>
 <span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>routes <span class="ot">&lt;-</span> transit<span class="sc">$</span>routes</span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>stops <span class="ot">&lt;-</span> transit<span class="sc">$</span>stops</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>routes <span class="ot">&lt;-</span> transit<span class="sc">$</span>routes</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>The transit network might cover a larger area than the street network, and the street network might include some areas that aren’t served by transit at all, so we’ll define a bounding box around the transit network and a bounding box around the street network and define our study area as the area that those two boxes overlap.</p>
 <div class="cell">
@@ -173,26 +172,21 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>area <span class="ot">&lt;-</span> <span class="fu">st_intersection</span>(<span class="fu">st_as_sfc</span>(routes_bbox), </span>
 <span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>                                <span class="fu">st_as_sfc</span>(streets_bbox))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p>Now, we’ll filter out routes, stops, and streets to only include what’s in that study area.</p>
+<p>Now, we’ll filter out routes and streets to only include what’s in that study area.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>area_routes <span class="ot">&lt;-</span> <span class="fu">st_intersection</span>(routes, area)</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>area_stops <span class="ot">&lt;-</span> <span class="fu">st_intersection</span>(stops, area) <span class="sc">|&gt;</span></span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="at">id =</span> stop_id)</span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>area_streets <span class="ot">&lt;-</span> <span class="fu">st_intersection</span>(streets, area) <span class="sc">|&gt;</span></span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">st_cast</span>(<span class="st">"MULTILINESTRING"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>area_routes <span class="ot">&lt;-</span> <span class="fu">st_intersection</span>(routes, area) <span class="sc">|&gt;</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">st_cast</span>(<span class="st">"MULTILINESTRING"</span>)</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>area_streets <span class="ot">&lt;-</span> <span class="fu">st_intersection</span>(streets, area) <span class="sc">|&gt;</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">st_cast</span>(<span class="st">"MULTILINESTRING"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p>And we can create a quick map of the routes, stops, and streets in our study area.</p>
+<p>And we can create a quick map of the routes and streets in our study area.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(area_streets) <span class="sc">+</span></span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>(<span class="at">color =</span> <span class="st">"gray"</span>) <span class="sc">+</span></span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>(<span class="at">data =</span> area_routes,</span>
 <span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>          <span class="at">color =</span> <span class="st">"red"</span>) <span class="sc">+</span></span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>(<span class="at">data =</span> area_stops,</span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>          <span class="at">color =</span> <span class="st">"blue"</span>,</span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>          <span class="at">size =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_void</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_void</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -207,66 +201,129 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggsave</span>(<span class="at">width =</span> <span class="dv">6</span>, <span class="at">height =</span> <span class="dv">6</span>, <span class="at">units =</span> <span class="st">"in"</span>, <span class="at">dpi =</span> <span class="dv">600</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
-<section id="map-stop-frequencies" class="level2">
-<h2 class="anchored" data-anchor-id="map-stop-frequencies">Map stop frequencies</h2>
+<section id="map-stops-and-frequencies" class="level2">
+<h2 class="anchored" data-anchor-id="map-stops-and-frequencies">Map stops and frequencies</h2>
 <p>As we’ve discussed, the presence of a stop is less relevant than the presence of frequent transit service. We can map the stops by how frequently they are served. The tidytransit package has a function called <code>get_stop_frequency</code> that will read the GTFS file and calculate the number of departures from each stop within a specified time window.</p>
 <p>First we need to find the GTFS file in the networks folder. Here, I’m getting a list of all the file in the directory, and making a separate list of those that are zip files (these will be the GTFS files).</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>network_file_list <span class="ot">&lt;-</span> <span class="fu">list.files</span>(<span class="at">path =</span> <span class="fu">here</span>(<span class="st">"network-files"</span>,</span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>                                           <span class="st">"El-Paso-TX"</span>),</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>                                           <span class="st">"Salem-OR"</span>),</span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>                               <span class="at">full.names =</span> <span class="cn">FALSE</span>)</span>
 <span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>gtfs_files <span class="ot">&lt;-</span> network_file_list[<span class="fu">str_detect</span>(network_file_list, <span class="st">".zip"</span>)]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p>Now, I want to read the first GTFS feed in my list and calculate the stop frequencies. A couple quirks: tidytransit’s <code>read_gtfs</code> function is leaving off a prefix in the id column that the r5r package leaves in when it reads in stop locations, so in this specific case of El Paso, I’m adding it back in. You may not need to do this specific thing (<code>mutate(id = paste0("google_transit:", stop_id))</code>) for your study area.</p>
-<p>Also, the <code>get_stop_frequency</code> function returns a separate frequency for each route, so you’ll want to use <code>group_by</code> and <code>summarize</code> to collapse your data to the stop level.</p>
-<p>The <code>head()</code> and <code>kable()</code> functions below are just so I can show you the first few rows of the resulting table.</p>
+<p>Now, I want to read the GTFS feeds in my list and calculate the stop frequencies. <strong>Note that you can specify the time period during which you want to calculate the frequency.</strong></p>
+<p>I apologize for this bit being long and somewhat opaque. Happy to talk through the logic of the code during office hours.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>gtfs_data_1 <span class="ot">&lt;-</span> <span class="fu">read_gtfs</span>(<span class="fu">here</span>(<span class="st">"network-files"</span>,</span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>                                       <span class="st">"El-Paso-TX"</span>,</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>                                       gtfs_files[<span class="dv">1</span>]))</span>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># You can change these to match the time period you want to study.</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>study_period_start <span class="ot">=</span> <span class="st">"17:00:00"</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>study_period_end <span class="ot">=</span> <span class="st">"18:00:00"</span></span>
 <span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>stop_freq <span class="ot">&lt;-</span> <span class="fu">get_stop_frequency</span>(gtfs_data_1, </span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>                                <span class="at">start_time =</span> <span class="st">"17:00:00"</span>,</span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>                                <span class="at">end_time =</span> <span class="st">"18:00:00"</span>) <span class="sc">|&gt;</span></span>
-<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">id =</span> <span class="fu">paste0</span>(<span class="st">"google_transit:"</span>, stop_id)) <span class="sc">|&gt;</span></span>
-<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(id) <span class="sc">|&gt;</span></span>
-<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">n_departures =</span> <span class="fu">sum</span>(n_departures)) </span>
-<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(stop_freq) <span class="sc">|&gt;</span></span>
-<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>gtfs_data_1 <span class="ot">&lt;-</span> <span class="fu">read_gtfs</span>(<span class="fu">here</span>(<span class="st">"network-files"</span>,</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>                                       <span class="st">"Salem-OR"</span>,</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>                                       gtfs_files[<span class="dv">1</span>]))</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>agency_1 <span class="ot">&lt;-</span> gtfs_data_1<span class="sc">$</span>agency<span class="sc">$</span>agency_id</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>stop_freq_1 <span class="ot">&lt;-</span> <span class="fu">get_stop_frequency</span>(gtfs_data_1, </span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>                                <span class="at">start_time =</span> study_period_start,</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>                                <span class="at">end_time =</span> study_period_end) <span class="sc">|&gt;</span></span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(stop_id) <span class="sc">|&gt;</span></span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">n_departures =</span> <span class="fu">sum</span>(n_departures))</span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>stop_locs <span class="ot">&lt;-</span> <span class="fu">stops_as_sf</span>(gtfs_data_1<span class="sc">$</span>stops) <span class="sc">|&gt;</span></span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(stop_id) <span class="sc">|&gt;</span></span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(stop_freq_1) <span class="sc">|&gt;</span></span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">replace_na</span>(<span class="fu">list</span>(<span class="at">n_departures =</span> <span class="dv">0</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">id =</span> <span class="fu">paste0</span>(agency_1, <span class="st">"-"</span>, stop_id),</span>
+<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a>         <span class="at">agency =</span> agency_1) <span class="sc">|&gt;</span></span>
+<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(id, n_departures, agency)</span>
+<span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a><span class="fu">sum</span>(stop_locs<span class="sc">$</span>n_departures)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 4</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">2</span><span class="sc">:</span><span class="fu">length</span>(gtfs_files)) {</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  gtfs_data_next <span class="ot">&lt;-</span> <span class="fu">read_gtfs</span>(<span class="fu">here</span>(<span class="st">"network-files"</span>,</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>                                       <span class="st">"Salem-OR"</span>,</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>                                       gtfs_files[i]))</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>  agency_next <span class="ot">&lt;-</span> gtfs_data_next<span class="sc">$</span>agency<span class="sc">$</span>agency_id</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tryCatch</span>(</span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>    {</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>       stop_freq_next <span class="ot">&lt;-</span> <span class="fu">get_stop_frequency</span>(gtfs_data_next, </span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>                                          <span class="at">start_time =</span> study_period_start,</span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>                                          <span class="at">end_time =</span> study_period_end) <span class="sc">|&gt;</span></span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>         <span class="fu">group_by</span>(stop_id) <span class="sc">|&gt;</span></span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a>         <span class="fu">summarize</span>(<span class="at">n_departures =</span> <span class="fu">sum</span>(n_departures))</span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a>   </span>
+<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a>       stop_locs_next <span class="ot">&lt;-</span> <span class="fu">stops_as_sf</span>(gtfs_data_next<span class="sc">$</span>stops) <span class="sc">|&gt;</span></span>
+<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a>         <span class="fu">left_join</span>(stop_freq_next) <span class="sc">|&gt;</span></span>
+<span id="cb11-18"><a href="#cb11-18" aria-hidden="true" tabindex="-1"></a>         <span class="fu">replace_na</span>(<span class="fu">list</span>(<span class="at">n_departures =</span> <span class="dv">0</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb11-19"><a href="#cb11-19" aria-hidden="true" tabindex="-1"></a>         <span class="fu">mutate</span>(<span class="at">id =</span> <span class="fu">paste0</span>(agency_next, <span class="st">"-"</span>, stop_id),</span>
+<span id="cb11-20"><a href="#cb11-20" aria-hidden="true" tabindex="-1"></a>         <span class="at">agency =</span> agency_next) <span class="sc">|&gt;</span></span>
+<span id="cb11-21"><a href="#cb11-21" aria-hidden="true" tabindex="-1"></a>         <span class="fu">select</span>(id, n_departures, agency)</span>
+<span id="cb11-22"><a href="#cb11-22" aria-hidden="true" tabindex="-1"></a>       </span>
+<span id="cb11-23"><a href="#cb11-23" aria-hidden="true" tabindex="-1"></a>       stop_locs <span class="ot">&lt;-</span> <span class="fu">rbind</span>(stop_locs, stop_locs_next)</span>
+<span id="cb11-24"><a href="#cb11-24" aria-hidden="true" tabindex="-1"></a>    },</span>
+<span id="cb11-25"><a href="#cb11-25" aria-hidden="true" tabindex="-1"></a>    <span class="at">error =</span> <span class="cf">function</span>(cond) {</span>
+<span id="cb11-26"><a href="#cb11-26" aria-hidden="true" tabindex="-1"></a>      <span class="fu">message</span>(<span class="fu">paste0</span>(<span class="st">"skipping "</span>, gtfs_files[i]))</span>
+<span id="cb11-27"><a href="#cb11-27" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb11-28"><a href="#cb11-28" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb11-29"><a href="#cb11-29" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb11-30"><a href="#cb11-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-31"><a href="#cb11-31" aria-hidden="true" tabindex="-1"></a>stop_locs <span class="ot">&lt;-</span> stop_locs <span class="sc">|&gt;</span></span>
+<span id="cb11-32"><a href="#cb11-32" aria-hidden="true" tabindex="-1"></a>  <span class="fu">st_filter</span>(area)</span>
+<span id="cb11-33"><a href="#cb11-33" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-34"><a href="#cb11-34" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(stop_locs) <span class="sc">|&gt;</span></span>
+<span id="cb11-35"><a href="#cb11-35" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <table class="caption-top table table-sm table-striped small">
 <thead>
 <tr class="header">
 <th style="text-align: left;">id</th>
 <th style="text-align: right;">n_departures</th>
+<th style="text-align: left;">agency</th>
+<th style="text-align: left;">geometry</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td style="text-align: left;">google_transit:100</td>
-<td style="text-align: right;">1</td>
+<td style="text-align: left;">58-10051</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">58</td>
+<td style="text-align: left;">POINT (-123.5807 45.05862)</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">google_transit:1000</td>
-<td style="text-align: right;">1</td>
+<td style="text-align: left;">58-10052</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">58</td>
+<td style="text-align: left;">POINT (-123.354 45.09816)</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">google_transit:1002</td>
-<td style="text-align: right;">1</td>
+<td style="text-align: left;">58-10053</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">58</td>
+<td style="text-align: left;">POINT (-123.202 45.20018)</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">google_transit:1003</td>
-<td style="text-align: right;">1</td>
+<td style="text-align: left;">58-10054</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">58</td>
+<td style="text-align: left;">POINT (-123.1395 45.2)</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">google_transit:1007</td>
-<td style="text-align: right;">1</td>
+<td style="text-align: left;">58-10055</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">58</td>
+<td style="text-align: left;">POINT (-122.9854 45.29902)</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">google_transit:101</td>
-<td style="text-align: right;">1</td>
+<td style="text-align: left;">58-10056</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">58</td>
+<td style="text-align: left;">POINT (-122.9486 45.30609)</td>
 </tr>
 </tbody>
 </table>
@@ -274,24 +331,24 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <p>Now we can add those frequencies to our layer of stops. Stops that have no service during the study period will have missing values, so I’ll replace those NA values with zeros. I’ll also calculate a categorical frequency variable just for visualization purposes.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>area_stops <span class="ot">&lt;-</span> <span class="fu">left_join</span>(area_stops, stop_freq) <span class="sc">|&gt;</span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">replace_na</span>(<span class="fu">list</span>(<span class="at">n_departures =</span> <span class="dv">0</span>)) <span class="sc">|&gt;</span></span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">freq_cat =</span> <span class="fu">case_when</span>(n_departures <span class="sc">==</span> <span class="dv">1</span> <span class="sc">~</span> <span class="st">"60-minute headways"</span>,</span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>                              n_departures <span class="sc">==</span> <span class="dv">2</span> <span class="sc">~</span> <span class="st">"30-minute headways"</span>,</span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>                              n_departures <span class="sc">==</span> <span class="dv">3</span> <span class="sc">~</span> <span class="st">"20-minute headways"</span>,</span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>                              n_departures <span class="sc">==</span> <span class="dv">4</span> <span class="sc">~</span> <span class="st">"15-minute headways"</span>,</span>
-<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>                              n_departures <span class="sc">&gt;</span> <span class="dv">4</span> <span class="sc">~</span> <span class="st">"Less than 15-minute headways"</span>,</span>
-<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>                              <span class="cn">TRUE</span> <span class="sc">~</span> <span class="st">"No service from 5pm to 6pm"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>stop_locs <span class="ot">&lt;-</span> stop_locs <span class="sc">|&gt;</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">freq_cat =</span> <span class="fu">case_when</span>(n_departures <span class="sc">==</span> <span class="dv">1</span> <span class="sc">~</span> <span class="st">"60-minute headways"</span>,</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>                              n_departures <span class="sc">==</span> <span class="dv">2</span> <span class="sc">~</span> <span class="st">"30-minute headways"</span>,</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>                              n_departures <span class="sc">==</span> <span class="dv">3</span> <span class="sc">~</span> <span class="st">"20-minute headways"</span>,</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>                              n_departures <span class="sc">==</span> <span class="dv">4</span> <span class="sc">~</span> <span class="st">"15-minute headways"</span>,</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>                              n_departures <span class="sc">&gt;</span> <span class="dv">4</span> <span class="sc">~</span> <span class="st">"Less than 15-minute headways"</span>,</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>                              <span class="cn">TRUE</span> <span class="sc">~</span> <span class="st">"No service from 5pm to 6pm"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Now I can make a quick map showing how the frequency varies among stops.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(area_stops) <span class="sc">+</span></span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>(<span class="at">data =</span> area_stops,</span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>          <span class="at">size =</span> <span class="dv">1</span>,</span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>          <span class="fu">aes</span>(<span class="at">color =</span> freq_cat)) <span class="sc">+</span></span>
-<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_brewer</span>(<span class="at">name =</span> <span class="st">"Service frequency"</span>,</span>
-<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>                     <span class="at">type =</span> <span class="st">"qual"</span>) <span class="sc">+</span></span>
-<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_void</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(stop_locs) <span class="sc">+</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>(<span class="at">data =</span> area_routes,</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>          <span class="at">color =</span> <span class="st">"red"</span>) <span class="sc">+</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>(<span class="at">size =</span> <span class="dv">1</span>,</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>          <span class="fu">aes</span>(<span class="at">color =</span> freq_cat)) <span class="sc">+</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_brewer</span>(<span class="at">name =</span> <span class="st">"Service frequency"</span>,</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>                     <span class="at">type =</span> <span class="st">"qual"</span>) <span class="sc">+</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_void</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -306,12 +363,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>We can also read in the centroids (points in the middle) of census blocks within the study area, display them on a map.</p>
 <p>We’ll be filtering them to only include blocks that contain a non-zero number of households and/or jobs.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>blocks <span class="ot">&lt;-</span> <span class="fu">here</span>(<span class="st">"locations"</span>,</span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>               <span class="st">"El-Paso-TX-blocks.geojson"</span>) <span class="sc">|&gt;</span></span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">st_read</span>(<span class="at">quiet =</span> <span class="cn">TRUE</span>) <span class="sc">|&gt;</span></span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">st_filter</span>(area) <span class="sc">|&gt;</span></span>
-<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(total_emp <span class="sc">&gt;</span> <span class="dv">0</span>,</span>
-<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>         n_HHs <span class="sc">&gt;</span> <span class="dv">0</span> )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>blocks <span class="ot">&lt;-</span> <span class="fu">here</span>(<span class="st">"locations"</span>,</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>               <span class="st">"Salem-OR-blocks.geojson"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">st_read</span>(<span class="at">quiet =</span> <span class="cn">TRUE</span>) <span class="sc">|&gt;</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">st_filter</span>(area) <span class="sc">|&gt;</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(total_emp <span class="sc">&gt;</span> <span class="dv">0</span>,</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>         n_HHs <span class="sc">&gt;</span> <span class="dv">0</span> )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>This layer of blocks includes the following attributes:</p>
 <ul>
@@ -327,14 +384,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </ul>
 <p>Here’s a map that shows the variation in demand for travel to/from locations throughout the study area (transit routes are also shown for context).</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(area_routes) <span class="sc">+</span></span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>(<span class="at">color =</span> <span class="st">"red"</span>) <span class="sc">+</span></span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>(<span class="at">data =</span> blocks,</span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>          <span class="fu">aes</span>(<span class="at">size =</span> total_attr,</span>
-<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>              <span class="at">alpha =</span> total_attr)) <span class="sc">+</span></span>
-<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_alpha</span>(<span class="at">name =</span> <span class="st">"Estimate daily trips"</span>) <span class="sc">+</span></span>
-<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_size</span>(<span class="at">name =</span> <span class="st">"Estimate daily trips"</span>) <span class="sc">+</span></span>
-<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_void</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(area_routes) <span class="sc">+</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>(<span class="at">color =</span> <span class="st">"red"</span>) <span class="sc">+</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>(<span class="at">data =</span> blocks,</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>          <span class="fu">aes</span>(<span class="at">size =</span> total_attr,</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>              <span class="at">alpha =</span> total_attr)) <span class="sc">+</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_alpha</span>(<span class="at">name =</span> <span class="st">"Estimate daily trips"</span>) <span class="sc">+</span></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_size</span>(<span class="at">name =</span> <span class="st">"Estimate daily trips"</span>) <span class="sc">+</span></span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_void</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -345,8 +402,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <p>I’ll save that map as a .png file.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">here</span>(<span class="st">"demand-map.png"</span>) <span class="sc">|&gt;</span></span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggsave</span>(<span class="at">width =</span> <span class="dv">6</span>, <span class="at">height =</span> <span class="dv">6</span>, <span class="at">units =</span> <span class="st">"in"</span>, <span class="at">dpi =</span> <span class="dv">600</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">here</span>(<span class="st">"demand-map.png"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggsave</span>(<span class="at">width =</span> <span class="dv">6</span>, <span class="at">height =</span> <span class="dv">6</span>, <span class="at">units =</span> <span class="st">"in"</span>, <span class="at">dpi =</span> <span class="dv">600</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="calculate-accessibility-to-transit" class="level2">
@@ -373,16 +430,16 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h4 class="anchored" data-anchor-id="access-to-households-from-stops">Access to households from stops</h4>
 <p>Here is how you would calculate the number of households within a 10-minute walk of each transit stop in your study area.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>access_to_transit_1 <span class="ot">&lt;-</span> <span class="fu">accessibility</span>(<span class="at">r5r_core =</span> my_core,</span>
-<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">origins =</span> area_stops,</span>
-<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">destinations =</span> blocks,</span>
-<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">opportunities_colnames =</span> <span class="st">"n_HHs"</span>,</span>
-<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">mode =</span> <span class="st">"WALK"</span>,</span>
-<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">decay_function =</span> <span class="st">"step"</span>,</span>
-<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">cutoffs =</span> <span class="dv">10</span>)</span>
-<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(access_to_transit_1) <span class="sc">|&gt;</span></span>
-<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>access_to_transit_1 <span class="ot">&lt;-</span> <span class="fu">accessibility</span>(<span class="at">r5r_core =</span> my_core,</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">origins =</span> stop_locs,</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">destinations =</span> blocks,</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">opportunities_colnames =</span> <span class="st">"n_HHs"</span>,</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">mode =</span> <span class="st">"WALK"</span>,</span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">decay_function =</span> <span class="st">"step"</span>,</span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">cutoffs =</span> <span class="dv">10</span>)</span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(access_to_transit_1) <span class="sc">|&gt;</span></span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <table class="caption-top table table-sm table-striped small">
 <thead>
@@ -396,42 +453,42 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
-<td style="text-align: left;">google_transit:100</td>
+<td style="text-align: left;">58-10051</td>
 <td style="text-align: left;">n_HHs</td>
 <td style="text-align: right;">50</td>
 <td style="text-align: right;">10</td>
-<td style="text-align: right;">200</td>
+<td style="text-align: right;">1</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">google_transit:1000</td>
+<td style="text-align: left;">58-10052</td>
 <td style="text-align: left;">n_HHs</td>
 <td style="text-align: right;">50</td>
 <td style="text-align: right;">10</td>
-<td style="text-align: right;">195</td>
+<td style="text-align: right;">0</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">google_transit:1002</td>
+<td style="text-align: left;">58-10053</td>
 <td style="text-align: left;">n_HHs</td>
 <td style="text-align: right;">50</td>
 <td style="text-align: right;">10</td>
-<td style="text-align: right;">106</td>
+<td style="text-align: right;">0</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">google_transit:1003</td>
+<td style="text-align: left;">58-10054</td>
 <td style="text-align: left;">n_HHs</td>
 <td style="text-align: right;">50</td>
 <td style="text-align: right;">10</td>
-<td style="text-align: right;">106</td>
+<td style="text-align: right;">0</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">google_transit:1007</td>
+<td style="text-align: left;">58-10055</td>
 <td style="text-align: left;">n_HHs</td>
 <td style="text-align: right;">50</td>
 <td style="text-align: right;">10</td>
-<td style="text-align: right;">215</td>
+<td style="text-align: right;">0</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">google_transit:101</td>
+<td style="text-align: left;">58-10056</td>
 <td style="text-align: left;">n_HHs</td>
 <td style="text-align: right;">50</td>
 <td style="text-align: right;">10</td>
@@ -443,15 +500,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <p>Now we can join those results to our stops layer and see the number of households served by each stop.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>area_stops <span class="ot">&lt;-</span> area_stops <span class="sc">|&gt;</span></span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(access_to_transit_1)</span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(area_stops) <span class="sc">+</span></span>
-<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>(<span class="fu">aes</span>(<span class="at">color =</span> accessibility)) <span class="sc">+</span></span>
-<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_viridis_c</span>(<span class="at">trans =</span> <span class="st">"log"</span>,</span>
-<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>                        <span class="at">name =</span> <span class="st">"Number of</span><span class="sc">\n</span><span class="st">households within</span><span class="sc">\n</span><span class="st">10-minute walk"</span>,</span>
-<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>                        <span class="at">breaks =</span> <span class="fu">c</span>(<span class="dv">5</span>, <span class="dv">50</span>, <span class="dv">500</span>)) <span class="sc">+</span></span>
-<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_void</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>stop_locs <span class="ot">&lt;-</span> stop_locs <span class="sc">|&gt;</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(access_to_transit_1)</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(stop_locs) <span class="sc">+</span></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>(<span class="fu">aes</span>(<span class="at">color =</span> accessibility)) <span class="sc">+</span></span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_viridis_c</span>(<span class="at">trans =</span> <span class="st">"log"</span>,</span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>                        <span class="at">name =</span> <span class="st">"Number of</span><span class="sc">\n</span><span class="st">households within</span><span class="sc">\n</span><span class="st">10-minute walk"</span>,</span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>                        <span class="at">breaks =</span> <span class="fu">c</span>(<span class="dv">5</span>, <span class="dv">50</span>, <span class="dv">500</span>)) <span class="sc">+</span></span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_void</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -462,24 +519,24 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <p>And I can save that map.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">here</span>(<span class="st">"stops-access.png"</span>) <span class="sc">|&gt;</span></span>
-<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggsave</span>(<span class="at">width =</span> <span class="dv">6</span>, <span class="at">height =</span> <span class="dv">6</span>, <span class="at">units =</span> <span class="st">"in"</span>, <span class="at">dpi =</span> <span class="dv">600</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">here</span>(<span class="st">"stops-access.png"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggsave</span>(<span class="at">width =</span> <span class="dv">6</span>, <span class="at">height =</span> <span class="dv">6</span>, <span class="at">units =</span> <span class="st">"in"</span>, <span class="at">dpi =</span> <span class="dv">600</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="access-to-departures-from-blockshouseholds" class="level4">
 <h4 class="anchored" data-anchor-id="access-to-departures-from-blockshouseholds">Access to departures from blocks/households</h4>
 <p>Another measure of accessibility to transit would be the number of transit departures within a ten-minute walk from each census block.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>access_to_transit_2 <span class="ot">&lt;-</span> <span class="fu">accessibility</span>(<span class="at">r5r_core =</span> my_core,</span>
-<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">origins =</span> blocks,</span>
-<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">destinations =</span> area_stops,</span>
-<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">opportunities_colnames =</span> <span class="st">"n_departures"</span>,</span>
-<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">mode =</span> <span class="st">"WALK"</span>,</span>
-<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">decay_function =</span> <span class="st">"step"</span>,</span>
-<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">cutoffs =</span> <span class="dv">10</span>)</span>
-<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(access_to_transit_2) <span class="sc">|&gt;</span></span>
-<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>access_to_transit_2 <span class="ot">&lt;-</span> <span class="fu">accessibility</span>(<span class="at">r5r_core =</span> my_core,</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">origins =</span> blocks,</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">destinations =</span> stop_locs,</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">opportunities_colnames =</span> <span class="st">"n_departures"</span>,</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">mode =</span> <span class="st">"WALK"</span>,</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">decay_function =</span> <span class="st">"step"</span>,</span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">cutoffs =</span> <span class="dv">10</span>)</span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(access_to_transit_2) <span class="sc">|&gt;</span></span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <table class="caption-top table table-sm table-striped small">
 <thead>
@@ -493,42 +550,42 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
-<td style="text-align: left;">481410103533008</td>
-<td style="text-align: left;">n_departures</td>
-<td style="text-align: right;">50</td>
-<td style="text-align: right;">10</td>
-<td style="text-align: right;">9</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">481410017001060</td>
-<td style="text-align: left;">n_departures</td>
-<td style="text-align: right;">50</td>
-<td style="text-align: right;">10</td>
-<td style="text-align: right;">80</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">481410103461005</td>
+<td style="text-align: left;">410470107022040</td>
 <td style="text-align: left;">n_departures</td>
 <td style="text-align: right;">50</td>
 <td style="text-align: right;">10</td>
 <td style="text-align: right;">0</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">481410104121001</td>
+<td style="text-align: left;">410470022023007</td>
 <td style="text-align: left;">n_departures</td>
 <td style="text-align: right;">50</td>
 <td style="text-align: right;">10</td>
-<td style="text-align: right;">1</td>
+<td style="text-align: right;">4</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">481410011122013</td>
+<td style="text-align: left;">410470014023017</td>
 <td style="text-align: left;">n_departures</td>
 <td style="text-align: right;">50</td>
 <td style="text-align: right;">10</td>
-<td style="text-align: right;">11</td>
+<td style="text-align: right;">0</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">481410038032010</td>
+<td style="text-align: left;">410470010002012</td>
+<td style="text-align: left;">n_departures</td>
+<td style="text-align: right;">50</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">12</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">410470106001091</td>
+<td style="text-align: left;">n_departures</td>
+<td style="text-align: right;">50</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">410470028001024</td>
 <td style="text-align: left;">n_departures</td>
 <td style="text-align: right;">50</td>
 <td style="text-align: right;">10</td>
@@ -540,15 +597,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <p>And now I can map those:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>blocks <span class="ot">&lt;-</span> blocks <span class="sc">|&gt;</span></span>
-<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(access_to_transit_2)</span>
-<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(blocks) <span class="sc">+</span></span>
-<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>(<span class="fu">aes</span>(<span class="at">color =</span> accessibility)) <span class="sc">+</span></span>
-<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_viridis_c</span>(<span class="at">trans =</span> <span class="st">"log"</span>,</span>
-<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>                        <span class="at">name =</span> <span class="st">"Number of bus </span><span class="sc">\n</span><span class="st">departures within</span><span class="sc">\n</span><span class="st">a 10-minute walk"</span>,</span>
-<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>                        <span class="at">breaks =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">10</span>, <span class="dv">100</span>)) <span class="sc">+</span></span>
-<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_void</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>blocks <span class="ot">&lt;-</span> blocks <span class="sc">|&gt;</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(access_to_transit_2)</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(blocks) <span class="sc">+</span></span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>(<span class="fu">aes</span>(<span class="at">color =</span> accessibility)) <span class="sc">+</span></span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_viridis_c</span>(<span class="at">trans =</span> <span class="st">"log"</span>,</span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>                        <span class="at">name =</span> <span class="st">"Number of bus </span><span class="sc">\n</span><span class="st">departures within</span><span class="sc">\n</span><span class="st">a 10-minute walk"</span>,</span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>                        <span class="at">breaks =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">10</span>, <span class="dv">100</span>)) <span class="sc">+</span></span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_void</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -564,21 +621,21 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>Here is how you would calculate the median, 25th percentile, and 75th percentile number of trip attractions that are accessible from each census block with a 30-minute transit commute during the 5pm hour on Wednesday, February 28, 2024.</p>
 <p>You’ll end up with a table with the 25th, 50th, and 75th percentile accessibility for each census block.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>access_by_transit <span class="ot">&lt;-</span> <span class="fu">accessibility</span>(<span class="at">r5r_core =</span> my_core,</span>
-<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">origins =</span> blocks,</span>
-<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">destinations =</span> blocks,</span>
-<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">opportunities_colnames =</span> <span class="st">"total_attr"</span>,</span>
-<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">mode =</span> <span class="st">"TRANSIT"</span>,</span>
-<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">decay_function =</span> <span class="st">"step"</span>,</span>
-<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">cutoffs =</span> <span class="dv">30</span>,</span>
-<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">departure_datetime =</span> </span>
-<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a>                                   <span class="fu">as.POSIXct</span>(<span class="st">"28-02-2024 17:00:00"</span>,</span>
-<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a>                                              <span class="at">format =</span> <span class="st">"%d-%m-%Y %H:%M:%S"</span>),</span>
-<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">time_window =</span> <span class="dv">60</span>,</span>
-<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">percentiles =</span> <span class="fu">c</span>(<span class="dv">25</span>, <span class="dv">50</span>, <span class="dv">75</span>))</span>
-<span id="cb20-13"><a href="#cb20-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-14"><a href="#cb20-14" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(access_by_transit) <span class="sc">|&gt;</span></span>
-<span id="cb20-15"><a href="#cb20-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>access_by_transit <span class="ot">&lt;-</span> <span class="fu">accessibility</span>(<span class="at">r5r_core =</span> my_core,</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">origins =</span> blocks,</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">destinations =</span> blocks,</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">opportunities_colnames =</span> <span class="st">"total_attr"</span>,</span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">mode =</span> <span class="st">"TRANSIT"</span>,</span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">decay_function =</span> <span class="st">"step"</span>,</span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">cutoffs =</span> <span class="dv">30</span>,</span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">departure_datetime =</span> </span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a>                                   <span class="fu">as.POSIXct</span>(<span class="st">"28-02-2024 17:00:00"</span>,</span>
+<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a>                                              <span class="at">format =</span> <span class="st">"%d-%m-%Y %H:%M:%S"</span>),</span>
+<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">time_window =</span> <span class="dv">60</span>,</span>
+<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">percentiles =</span> <span class="fu">c</span>(<span class="dv">25</span>, <span class="dv">50</span>, <span class="dv">75</span>))</span>
+<span id="cb22-13"><a href="#cb22-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-14"><a href="#cb22-14" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(access_by_transit) <span class="sc">|&gt;</span></span>
+<span id="cb22-15"><a href="#cb22-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <table class="caption-top table table-sm table-striped small">
 <thead>
@@ -592,46 +649,46 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
-<td style="text-align: left;">481410103533008</td>
+<td style="text-align: left;">410470107022040</td>
 <td style="text-align: left;">total_attr</td>
 <td style="text-align: right;">25</td>
 <td style="text-align: right;">30</td>
-<td style="text-align: right;">8381</td>
+<td style="text-align: right;">693</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">481410103533008</td>
+<td style="text-align: left;">410470107022040</td>
 <td style="text-align: left;">total_attr</td>
 <td style="text-align: right;">50</td>
 <td style="text-align: right;">30</td>
-<td style="text-align: right;">5847</td>
+<td style="text-align: right;">693</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">481410103533008</td>
+<td style="text-align: left;">410470107022040</td>
 <td style="text-align: left;">total_attr</td>
 <td style="text-align: right;">75</td>
 <td style="text-align: right;">30</td>
-<td style="text-align: right;">5778</td>
+<td style="text-align: right;">693</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">481410017001060</td>
+<td style="text-align: left;">410470022023007</td>
 <td style="text-align: left;">total_attr</td>
 <td style="text-align: right;">25</td>
 <td style="text-align: right;">30</td>
-<td style="text-align: right;">84599</td>
+<td style="text-align: right;">11200</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">481410017001060</td>
+<td style="text-align: left;">410470022023007</td>
 <td style="text-align: left;">total_attr</td>
 <td style="text-align: right;">50</td>
 <td style="text-align: right;">30</td>
-<td style="text-align: right;">63433</td>
+<td style="text-align: right;">11200</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">481410017001060</td>
+<td style="text-align: left;">410470022023007</td>
 <td style="text-align: left;">total_attr</td>
 <td style="text-align: right;">75</td>
 <td style="text-align: right;">30</td>
-<td style="text-align: right;">54984</td>
+<td style="text-align: right;">11200</td>
 </tr>
 </tbody>
 </table>
@@ -639,15 +696,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <p>It will be helpful to rearrange this table so that there is one row for each census block and the different accessibility value for each percentile is in a different column.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>access_by_transit <span class="ot">&lt;-</span> access_by_transit <span class="sc">|&gt;</span></span>
-<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(id, percentile, accessibility) <span class="sc">|&gt;</span></span>
-<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_wider</span>(<span class="at">id_cols =</span> <span class="st">"id"</span>,</span>
-<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>              <span class="at">names_from =</span> percentile,</span>
-<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>              <span class="at">names_prefix =</span> <span class="st">"access_pctile_"</span>,</span>
-<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>              <span class="at">values_from =</span> accessibility)</span>
-<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(access_by_transit) <span class="sc">|&gt;</span></span>
-<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>access_by_transit <span class="ot">&lt;-</span> access_by_transit <span class="sc">|&gt;</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(id, percentile, accessibility) <span class="sc">|&gt;</span></span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_wider</span>(<span class="at">id_cols =</span> <span class="st">"id"</span>,</span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>              <span class="at">names_from =</span> percentile,</span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>              <span class="at">names_prefix =</span> <span class="st">"access_pctile_"</span>,</span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>              <span class="at">values_from =</span> accessibility)</span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(access_by_transit) <span class="sc">|&gt;</span></span>
+<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <table class="caption-top table table-sm table-striped small">
 <thead>
@@ -660,40 +717,40 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
-<td style="text-align: left;">481410103533008</td>
-<td style="text-align: right;">8381</td>
-<td style="text-align: right;">5847</td>
-<td style="text-align: right;">5778</td>
+<td style="text-align: left;">410470107022040</td>
+<td style="text-align: right;">693</td>
+<td style="text-align: right;">693</td>
+<td style="text-align: right;">693</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">481410017001060</td>
-<td style="text-align: right;">84599</td>
-<td style="text-align: right;">63433</td>
-<td style="text-align: right;">54984</td>
+<td style="text-align: left;">410470022023007</td>
+<td style="text-align: right;">11200</td>
+<td style="text-align: right;">11200</td>
+<td style="text-align: right;">11200</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">481410103461005</td>
-<td style="text-align: right;">5005</td>
-<td style="text-align: right;">5005</td>
-<td style="text-align: right;">5005</td>
+<td style="text-align: left;">410470014023017</td>
+<td style="text-align: right;">18330</td>
+<td style="text-align: right;">18330</td>
+<td style="text-align: right;">18330</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">481410104121001</td>
-<td style="text-align: right;">2546</td>
-<td style="text-align: right;">2546</td>
-<td style="text-align: right;">2546</td>
+<td style="text-align: left;">410470010002012</td>
+<td style="text-align: right;">36088</td>
+<td style="text-align: right;">36088</td>
+<td style="text-align: right;">36088</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">481410011122013</td>
-<td style="text-align: right;">28008</td>
-<td style="text-align: right;">14402</td>
-<td style="text-align: right;">10027</td>
+<td style="text-align: left;">410470106001091</td>
+<td style="text-align: right;">838</td>
+<td style="text-align: right;">838</td>
+<td style="text-align: right;">838</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">481410038032010</td>
-<td style="text-align: right;">2204</td>
-<td style="text-align: right;">2204</td>
-<td style="text-align: right;">2204</td>
+<td style="text-align: left;">410470028001024</td>
+<td style="text-align: right;">73</td>
+<td style="text-align: right;">73</td>
+<td style="text-align: right;">73</td>
 </tr>
 </tbody>
 </table>
@@ -701,16 +758,16 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <p>Now we can join this to our layer of census block centroids and see how access by transit varies across the study area.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>blocks <span class="ot">&lt;-</span> blocks <span class="sc">|&gt;</span></span>
-<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(access_by_transit)</span>
-<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(blocks) <span class="sc">+</span></span>
-<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>(<span class="fu">aes</span>(<span class="at">color =</span> access_pctile_50),</span>
-<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>          <span class="at">size =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
-<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_viridis_c</span>(<span class="at">trans =</span> <span class="st">"log"</span>,</span>
-<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>                        <span class="at">name =</span> <span class="st">"Median accessibilty</span><span class="sc">\n</span><span class="st">to destinations"</span>,</span>
-<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a>                        <span class="at">breaks =</span> <span class="fu">c</span>(<span class="dv">20</span>, <span class="dv">200</span>, <span class="dv">2000</span>, <span class="dv">20000</span>)) <span class="sc">+</span></span>
-<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_void</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>blocks <span class="ot">&lt;-</span> blocks <span class="sc">|&gt;</span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(access_by_transit)</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(blocks) <span class="sc">+</span></span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>(<span class="fu">aes</span>(<span class="at">color =</span> access_pctile_50),</span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>          <span class="at">size =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_viridis_c</span>(<span class="at">trans =</span> <span class="st">"log"</span>,</span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>                        <span class="at">name =</span> <span class="st">"Median accessibilty</span><span class="sc">\n</span><span class="st">to destinations"</span>,</span>
+<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a>                        <span class="at">breaks =</span> <span class="fu">c</span>(<span class="dv">20</span>, <span class="dv">200</span>, <span class="dv">2000</span>, <span class="dv">20000</span>)) <span class="sc">+</span></span>
+<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_void</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -721,8 +778,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <p>And I can save that map.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="fu">here</span>(<span class="st">"block-access.png"</span>) <span class="sc">|&gt;</span></span>
-<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggsave</span>(<span class="at">width =</span> <span class="dv">6</span>, <span class="at">height =</span> <span class="dv">6</span>, <span class="at">units =</span> <span class="st">"in"</span>, <span class="at">dpi =</span> <span class="dv">600</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="fu">here</span>(<span class="st">"block-access.png"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggsave</span>(<span class="at">width =</span> <span class="dv">6</span>, <span class="at">height =</span> <span class="dv">6</span>, <span class="at">units =</span> <span class="st">"in"</span>, <span class="at">dpi =</span> <span class="dv">600</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 </section>
@@ -730,46 +787,46 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h2 class="anchored" data-anchor-id="stop-r5">Stop R5</h2>
 <p>Once you’re done with your calculations, you can stop R5, which will release the memory it’s using.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="fu">stop_r5</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="fu">stop_r5</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="save-data" class="level2">
 <h2 class="anchored" data-anchor-id="save-data">Save data</h2>
 <p>You might want to work with this data using other GIS software. Here is how you would save all this data to an ESRI geodatabase.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="fu">st_write</span>(area_stops, </span>
-<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>         <span class="at">dsn =</span> <span class="fu">here</span>(<span class="st">"el-paso.gdb"</span>),</span>
-<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">layer =</span> <span class="st">"stops"</span>,</span>
-<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">quiet =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>         <span class="at">append =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a><span class="fu">st_write</span>(area_routes, </span>
-<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a>         <span class="at">dsn =</span> <span class="fu">here</span>(<span class="st">"el-paso.gdb"</span>),</span>
-<span id="cb25-9"><a href="#cb25-9" aria-hidden="true" tabindex="-1"></a>         <span class="at">layer =</span> <span class="st">"routes"</span>,</span>
-<span id="cb25-10"><a href="#cb25-10" aria-hidden="true" tabindex="-1"></a>         <span class="at">quiet =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb25-11"><a href="#cb25-11" aria-hidden="true" tabindex="-1"></a>         <span class="at">append =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb25-12"><a href="#cb25-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb25-13"><a href="#cb25-13" aria-hidden="true" tabindex="-1"></a><span class="fu">st_write</span>(area_streets, </span>
-<span id="cb25-14"><a href="#cb25-14" aria-hidden="true" tabindex="-1"></a>         <span class="at">dsn =</span> <span class="fu">here</span>(<span class="st">"el-paso.gdb"</span>),</span>
-<span id="cb25-15"><a href="#cb25-15" aria-hidden="true" tabindex="-1"></a>         <span class="at">layer =</span> <span class="st">"streets"</span>,</span>
-<span id="cb25-16"><a href="#cb25-16" aria-hidden="true" tabindex="-1"></a>         <span class="at">quiet =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb25-17"><a href="#cb25-17" aria-hidden="true" tabindex="-1"></a>         <span class="at">append =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb25-18"><a href="#cb25-18" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb25-19"><a href="#cb25-19" aria-hidden="true" tabindex="-1"></a><span class="fu">st_write</span>(blocks, </span>
-<span id="cb25-20"><a href="#cb25-20" aria-hidden="true" tabindex="-1"></a>         <span class="at">dsn =</span> <span class="fu">here</span>(<span class="st">"el-paso.gdb"</span>),</span>
-<span id="cb25-21"><a href="#cb25-21" aria-hidden="true" tabindex="-1"></a>         <span class="at">layer =</span> <span class="st">"blocks"</span>,</span>
-<span id="cb25-22"><a href="#cb25-22" aria-hidden="true" tabindex="-1"></a>         <span class="at">quiet =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb25-23"><a href="#cb25-23" aria-hidden="true" tabindex="-1"></a>         <span class="at">append =</span> <span class="cn">FALSE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="fu">st_write</span>(stop_locs, </span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>         <span class="at">dsn =</span> <span class="fu">here</span>(<span class="st">"salem.gdb"</span>),</span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">layer =</span> <span class="st">"stops"</span>,</span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">quiet =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a>         <span class="at">append =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a><span class="fu">st_write</span>(area_routes, </span>
+<span id="cb27-8"><a href="#cb27-8" aria-hidden="true" tabindex="-1"></a>         <span class="at">dsn =</span> <span class="fu">here</span>(<span class="st">"salem.gdb"</span>),</span>
+<span id="cb27-9"><a href="#cb27-9" aria-hidden="true" tabindex="-1"></a>         <span class="at">layer =</span> <span class="st">"routes"</span>,</span>
+<span id="cb27-10"><a href="#cb27-10" aria-hidden="true" tabindex="-1"></a>         <span class="at">quiet =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb27-11"><a href="#cb27-11" aria-hidden="true" tabindex="-1"></a>         <span class="at">append =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb27-12"><a href="#cb27-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-13"><a href="#cb27-13" aria-hidden="true" tabindex="-1"></a><span class="fu">st_write</span>(area_streets, </span>
+<span id="cb27-14"><a href="#cb27-14" aria-hidden="true" tabindex="-1"></a>         <span class="at">dsn =</span> <span class="fu">here</span>(<span class="st">"salem.gdb"</span>),</span>
+<span id="cb27-15"><a href="#cb27-15" aria-hidden="true" tabindex="-1"></a>         <span class="at">layer =</span> <span class="st">"streets"</span>,</span>
+<span id="cb27-16"><a href="#cb27-16" aria-hidden="true" tabindex="-1"></a>         <span class="at">quiet =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb27-17"><a href="#cb27-17" aria-hidden="true" tabindex="-1"></a>         <span class="at">append =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb27-18"><a href="#cb27-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-19"><a href="#cb27-19" aria-hidden="true" tabindex="-1"></a><span class="fu">st_write</span>(blocks, </span>
+<span id="cb27-20"><a href="#cb27-20" aria-hidden="true" tabindex="-1"></a>         <span class="at">dsn =</span> <span class="fu">here</span>(<span class="st">"salem.gdb"</span>),</span>
+<span id="cb27-21"><a href="#cb27-21" aria-hidden="true" tabindex="-1"></a>         <span class="at">layer =</span> <span class="st">"blocks"</span>,</span>
+<span id="cb27-22"><a href="#cb27-22" aria-hidden="true" tabindex="-1"></a>         <span class="at">quiet =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb27-23"><a href="#cb27-23" aria-hidden="true" tabindex="-1"></a>         <span class="at">append =</span> <span class="cn">FALSE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>And here is how I would save the data in the blocks and stops files as csv files (without the geospatial data).</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>area_stops <span class="sc">|&gt;</span></span>
-<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">st_drop_geometry</span>() <span class="sc">|&gt;</span></span>
-<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">write_csv</span>(<span class="at">file =</span> <span class="fu">here</span>(<span class="st">"stops_access.csv"</span>))</span>
-<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>blocks <span class="sc">|&gt;</span></span>
-<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">st_drop_geometry</span>() <span class="sc">|&gt;</span></span>
-<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">write_csv</span>(<span class="at">file =</span> <span class="fu">here</span>(<span class="st">"blocks_access.csv"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>stop_locs <span class="sc">|&gt;</span></span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">st_drop_geometry</span>() <span class="sc">|&gt;</span></span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">write_csv</span>(<span class="at">file =</span> <span class="fu">here</span>(<span class="st">"stops_access.csv"</span>))</span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>blocks <span class="sc">|&gt;</span></span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">st_drop_geometry</span>() <span class="sc">|&gt;</span></span>
+<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">write_csv</span>(<span class="at">file =</span> <span class="fu">here</span>(<span class="st">"blocks_access.csv"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 
